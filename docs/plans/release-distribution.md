@@ -21,14 +21,12 @@
 - [x] Document the installation and release process.
 
 ### Windows distribution
-- [ ] Add a PowerShell installer with the same archive validation and extension-link behavior.
-- [ ] Bundle the PowerShell installer in each release archive.
-- [ ] Run the public installer in an isolated Windows GitHub Actions job after release publication.
+- [x] Add a PowerShell installer with the same archive validation and extension-link behavior.
+- [x] Bundle the PowerShell installer in each release archive.
+- [x] Run the public installer in an isolated Windows GitHub Actions job after release publication.
 
 ## Verification
 - [x] Build the release archive locally.
 - [x] Inspect archive contents.
 - [x] Run the installer against the built archive with an isolated fake VS Code CLI.
 
-## Risk
-- The target GitHub repository currently has its own initial README. Publishing the plugin as the repository root requires an explicit choice to replace it or preserve it.
