@@ -20,6 +20,11 @@
 - [x] Publish the archive when a `v*` tag is pushed.
 - [x] Document the installation and release process.
 
+### Windows distribution
+- [ ] Add a PowerShell installer with the same archive validation and extension-link behavior.
+- [ ] Bundle the PowerShell installer in each release archive.
+- [ ] Run the public installer in an isolated Windows GitHub Actions job after release publication.
+
 ## Verification
 - [x] Build the release archive locally.
 - [x] Inspect archive contents.

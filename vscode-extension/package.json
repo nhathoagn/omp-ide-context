@@ -2,7 +2,7 @@
 	"name": "omp-ide-context-vscode",
 	"displayName": "OMP IDE Context",
 	"description": "Writes the active editor state to .omp/ide-context.json so the OMP extension can auto-inject it into every prompt. No network, no shell, no telemetry.",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"private": true,
 	"license": "MIT",
 	"publisher": "omp-safe-ide-context",

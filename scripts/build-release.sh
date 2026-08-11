@@ -29,7 +29,7 @@ cp omp-extension/package.json "${STAGE_DIR}/omp-extension/"
   ./node_modules/.bin/vsce package --no-dependencies --out "${STAGE_DIR}/vscode-extension/omp-ide-context-vscode.vsix"
 )
 
-cp README.md LICENSE SECURITY.md install.sh "${STAGE_DIR}/"
+cp README.md LICENSE SECURITY.md install.sh install.ps1 "${STAGE_DIR}/"
 tar -C "${STAGE_DIR}" -czf "${DIST_DIR}/${ARCHIVE_NAME}" .
 
 echo "Created ${DIST_DIR}/${ARCHIVE_NAME}"

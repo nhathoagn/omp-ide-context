@@ -38,19 +38,21 @@ This project is intentionally narrow. It is **not** a generic IDE bridge, it doe
 
 ### One-command install
 
-After a GitHub Release has been published, install the latest version on macOS or Linux with:
+**macOS / Linux**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/nhathoagn/omp-ide-context/main/install.sh | bash
 ```
 
-The installer downloads the latest release archive, installs the bundled VS Code extension, and links the OMP extension into `~/.omp/agent/extensions/`. It requires the VS Code `code` command to be available in `PATH`. Restart OMP afterwards; its status line should show `IDE:ready`.
+**Windows PowerShell**
 
-For an auditable installation, download `omp-ide-context.tar.gz` from the [latest GitHub Release](https://github.com/nhathoagn/omp-ide-context/releases/latest), inspect it, extract it, then run:
-
-```bash
-./install.sh --archive ./omp-ide-context.tar.gz
+```powershell
+irm https://raw.githubusercontent.com/nhathoagn/omp-ide-context/main/install.ps1 | iex
 ```
+
+Both installers download the latest release archive, install the bundled VS Code extension, and link the OMP extension. They require the VS Code `code` command to be available in `PATH`. Restart OMP afterwards; its status line should show `IDE:ready`.
+
+For an auditable installation, download `omp-ide-context.tar.gz` from the [latest GitHub Release](https://github.com/nhathoagn/omp-ide-context/releases/latest), inspect it, extract it, then run `./install.sh --archive ./omp-ide-context.tar.gz` on macOS/Linux or `.\install.ps1 -Archive .\omp-ide-context.tar.gz` in PowerShell.
 
 ### Development install
 
@@ -70,7 +72,7 @@ ln -s "$(pwd)/omp-extension" ~/.omp/agent/extensions/omp-safe-ide-context
 # Build and install the VS Code extension
 (cd vscode-extension && bun run build)
 (cd vscode-extension && ./node_modules/.bin/vsce package)
-code --install-extension vscode-extension/omp-ide-context-vscode-0.1.0.vsix
+code --install-extension vscode-extension/omp-ide-context-vscode-0.1.1.vsix
 ```
 
 ### 3. Git ignore

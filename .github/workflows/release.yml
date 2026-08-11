@@ -25,3 +25,28 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" dist/omp-ide-context.tar.gz --generate-notes
+
+  windows-install-smoke:
+    needs: release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install from the published release
+        shell: pwsh
+        run: |
+          $fakeBin = Join-Path $env:RUNNER_TEMP "fake-bin"
+          New-Item -ItemType Directory -Force -Path $fakeBin | Out-Null
+          Set-Content -Path (Join-Path $fakeBin "code.cmd") -Value "@exit /b 0"
+          $env:PATH = "$fakeBin;$env:PATH"
+          $env:OMP_IDE_CONTEXT_INSTALL_DIR = Join-Path $env:RUNNER_TEMP "omp-ide-context"
+          $env:OMP_IDE_CONTEXT_EXTENSION_DIR = Join-Path $env:RUNNER_TEMP "omp-extensions"
+
+          & .\install.ps1
+
+          $vsix = Join-Path $env:OMP_IDE_CONTEXT_INSTALL_DIR "vscode-extension\omp-ide-context-vscode.vsix"
+          $ompManifest = Join-Path $env:OMP_IDE_CONTEXT_EXTENSION_DIR "omp-safe-ide-context\package.json"
+          $bundledInstaller = Join-Path $env:OMP_IDE_CONTEXT_INSTALL_DIR "install.ps1"
+          if (-not (Test-Path -LiteralPath $vsix) -or -not (Test-Path -LiteralPath $ompManifest) -or -not (Test-Path -LiteralPath $bundledInstaller)) {
+            throw "Published Windows installer did not install every required artifact."
+          }
