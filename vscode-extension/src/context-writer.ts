@@ -35,6 +35,17 @@ export function uriToPosixRelative(workspaceRoot: string, fsPath: string): strin
 	return relative(workspaceRoot, fsPath).split(sep).join("/");
 }
 
+const BRIDGE_STATE_FILES: Record<string, true> = {
+	[`.omp/${STATE_FILENAME}`]: true,
+	[`.omp/${STATE_TMP_FILENAME}`]: true,
+	".omp/ide-context.config.json": true,
+};
+
+/** Return whether a workspace-relative file is managed by this bridge. */
+export function isBridgeStateFile(file: string): boolean {
+	return BRIDGE_STATE_FILES[file] === true;
+}
+
 /**
  * Build a fully-typed `ContextFile` from raw inputs. Truncates selection
  * text and sets `truncated` when over the cap.

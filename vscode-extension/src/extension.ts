@@ -32,6 +32,7 @@ import {
 	buildBlockedContextFile,
 	buildContextFile,
 	deleteContextFiles,
+	isBridgeStateFile,
 	stateFilePath,
 	uriToPosixRelative,
 	writeContextAtomic,
@@ -89,6 +90,8 @@ function captureContext(): Capture {
 	}
 
 	const file = uriToPosixRelative(workspaceRoot, document.uri.fsPath);
+	if (isBridgeStateFile(file)) return null;
+
 	const language = document.languageId;
 	const cursor = {
 		// VS Code positions are 0-indexed; the schema and OMP side are 1-indexed.

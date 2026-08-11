@@ -72,7 +72,7 @@ ln -s "$(pwd)/omp-extension" ~/.omp/agent/extensions/omp-safe-ide-context
 # Build and install the VS Code extension
 (cd vscode-extension && bun run build)
 (cd vscode-extension && ./node_modules/.bin/vsce package)
-code --install-extension vscode-extension/omp-ide-context-vscode-0.1.2.vsix
+code --install-extension vscode-extension/omp-ide-context-vscode-0.1.3.vsix
 ```
 
 ### 3. Enable capture

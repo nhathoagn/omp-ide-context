@@ -1,6 +1,6 @@
 {
 	"name": "omp-safe-ide-context",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"description": "OMP extension that auto-injects the active VS Code editor's file and selection into every user prompt via a file-based bridge.",
 	"type": "module",
 	"private": true,
