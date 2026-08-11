@@ -61,7 +61,7 @@ type State = {
 };
 
 const state: State = {
-	enabled: true,
+	enabled: false,
 	lastSerialized: null,
 };
 
@@ -158,6 +158,15 @@ async function publishContext(content: ContextFile | BlockedContextFile): Promis
 	// debounced by the editor event itself.
 	state.lastSerialized = json;
 	await writeContextAtomic(content.workspace, content);
+}
+
+/** Delete this bridge's transient files for the active workspace, if any. */
+async function clearCurrentWorkspaceContext(): Promise<void> {
+	const active = vscode.window.activeTextEditor;
+	if (!active) return;
+	const folder = vscode.workspace.getWorkspaceFolder(active.document.uri);
+	if (!folder) return;
+	await deleteContextFiles(folder.uri.fsPath);
 }
 
 /**
@@ -259,9 +268,14 @@ export function registerExtension(context: vscode.ExtensionContext): vscode.Disp
 	);
 
 	disposables.push(
-		vscode.commands.registerCommand("ompIdeContext.enable", () => {
+		vscode.commands.registerCommand("ompIdeContext.enable", async () => {
+			await vscode.workspace.getConfiguration("ompIdeContext").update(
+				"enabled",
+				true,
+				vscode.ConfigurationTarget.Global,
+			);
 			state.enabled = true;
-			void refreshContext();
+			await refreshContext();
 			if (!vscode.workspace.isTrusted) {
 				void vscode.window.showWarningMessage(
 					"OMP IDE Context: enabled, but the workspace is untrusted. No source code will be exported until you trust the workspace.",
@@ -274,16 +288,28 @@ export function registerExtension(context: vscode.ExtensionContext): vscode.Disp
 
 	disposables.push(
 		vscode.commands.registerCommand("ompIdeContext.disable", async () => {
+			await vscode.workspace.getConfiguration("ompIdeContext").update(
+				"enabled",
+				false,
+				vscode.ConfigurationTarget.Global,
+			);
 			state.enabled = false;
-			// Best-effort cleanup so a future OMP session does not see a
-			// stale context. We only delete for the current workspace.
-			const active = vscode.window.activeTextEditor;
-			if (active) {
-				const folder = vscode.workspace.getWorkspaceFolder(active.document.uri);
-				if (folder) await deleteContextFiles(folder.uri.fsPath);
-			}
+			await clearCurrentWorkspaceContext();
 			state.lastSerialized = null;
 			void vscode.window.showInformationMessage("OMP IDE Context: disabled.");
+		}),
+	);
+
+	disposables.push(
+		vscode.workspace.onDidChangeConfiguration(async (event) => {
+			if (!event.affectsConfiguration("ompIdeContext.enabled")) return;
+			state.enabled = vscode.workspace.getConfiguration("ompIdeContext").get<boolean>("enabled", false);
+			if (state.enabled) {
+				await refreshContext();
+			} else {
+				await clearCurrentWorkspaceContext();
+				state.lastSerialized = null;
+			}
 		}),
 	);
 
@@ -295,9 +321,9 @@ export function registerExtension(context: vscode.ExtensionContext): vscode.Disp
  * VS Code extension entry point.
  */
 export function activate(context: vscode.ExtensionContext): void {
+	state.enabled = vscode.workspace.getConfiguration("ompIdeContext").get<boolean>("enabled", false);
 	registerExtension(context);
-	// Eager first capture so the file exists before the user does anything.
-	void refreshContext();
+	if (state.enabled) void refreshContext();
 }
 
 /**

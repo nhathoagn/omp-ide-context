@@ -72,12 +72,18 @@ ln -s "$(pwd)/omp-extension" ~/.omp/agent/extensions/omp-safe-ide-context
 # Build and install the VS Code extension
 (cd vscode-extension && bun run build)
 (cd vscode-extension && ./node_modules/.bin/vsce package)
-code --install-extension vscode-extension/omp-ide-context-vscode-0.1.1.vsix
+code --install-extension vscode-extension/omp-ide-context-vscode-0.1.2.vsix
 ```
 
-### 3. Git ignore
+### 3. Enable capture
 
-Add to `<workspace>/.gitignore` (one-time per project, not done automatically):
+Capture is disabled by default, so installation does not create `<workspace>/.omp/`.
+
+- Run **`OMP IDE Context: Enable`** from the Command Palette to enable it globally in VS Code user settings.
+- Run **`OMP IDE Context: Disable`** to stop capture and remove this bridge's state files from the active workspace.
+- Alternatively, set `ompIdeContext.enabled` to `true` in VS Code **User** Settings. Avoid Workspace Settings if you do not want a tracked `.vscode/settings.json` change.
+
+When capture is enabled, add to `<workspace>/.gitignore`:
 
 ```gitignore
 .omp/ide-context.json
@@ -218,16 +224,14 @@ The archive contains the OMP extension and a prebuilt VSIX. Do not include `.omp
 
 ## How to uninstall
 
+Run the platform uninstaller with every workspace where the bridge has been enabled. It uninstalls both extensions, removes the installed package, deletes `.omp/ide-context.json`, `.omp/ide-context.tmp`, and `.omp/ide-context.config.json`, then removes `.omp` only if it is empty.
+
 ```bash
-# 1. Remove the OMP extension symlink
-rm ~/.omp/agent/extensions/omp-safe-ide-context
+./uninstall.sh --workspace /path/to/project [--workspace /path/to/another-project]
+```
 
-# 2. Remove the VS Code extension
-code --uninstall-extension omp-safe-ide-context.omp-ide-context-vscode
-
-# 3. Remove the state files from any project that has them
-find ~/projects -path '*/.omp/ide-context.json' -delete
-find ~/projects -path '*/.omp/ide-context.tmp' -delete
+```powershell
+.\uninstall.ps1 -Workspace C:\path\to\project[, C:\path\to\another-project]
 ```
 
 ## License
