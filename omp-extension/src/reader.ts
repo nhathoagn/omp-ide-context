@@ -108,7 +108,12 @@ export async function readIdeContext(workspaceRoot: string, config: ContextConfi
 	// writer's claim.
 	const writerRoot = normalizeWorkspace(validated.value.workspace);
 	const ourRoot = normalizeWorkspace(workspaceRoot);
-	if (writerRoot !== ourRoot) {
+	// Win32 paths refer to the same filesystem regardless of drive-letter
+	// casing. VS Code may emit `d:\...` while OMP's cwd is `D:\...`.
+	const sameWorkspace = process.platform === "win32"
+		? writerRoot.toLowerCase() === ourRoot.toLowerCase()
+		: writerRoot === ourRoot;
+	if (!sameWorkspace) {
 		return {
 			ok: false,
 			reason: `writer workspace "${writerRoot}" does not match current "${ourRoot}"`,

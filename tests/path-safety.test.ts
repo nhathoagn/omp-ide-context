@@ -5,23 +5,22 @@ import { join } from "node:path";
 import { assertInsideWorkspace } from "../omp-extension/src/path-safety.ts";
 
 let root: string;
+let outsideRoot: string;
 
 beforeAll(async () => {
 	root = await mkdtemp(join(tmpdir(), "omp-ctx-"));
+	outsideRoot = await mkdtemp(join(tmpdir(), "omp-ctx-outside-"));
 	await mkdir(join(root, "src"), { recursive: true });
 	await writeFile(join(root, "src", "a.ts"), "x");
 	await writeFile(join(root, "src", "b.ts"), "y");
-	await writeFile(join(root, "outside.txt"), "z");
-	// Symlink inside the workspace that escapes.
-	try {
-		await symlink(join(root, "outside.txt"), join(root, "src", "escape-link"));
-	} catch {
-		// some systems restrict symlinks in temp; tests are best-effort there
-	}
+	await writeFile(join(outsideRoot, "outside.txt"), "z");
 });
 
 afterAll(async () => {
-	await rm(root, { recursive: true, force: true });
+	await Promise.all([
+		rm(root, { recursive: true, force: true }),
+		rm(outsideRoot, { recursive: true, force: true }),
+	]);
 });
 
 describe("assertInsideWorkspace", () => {
@@ -55,21 +54,15 @@ describe("assertInsideWorkspace", () => {
 	});
 
 	it("rejects a symlink that escapes the workspace", async () => {
-		const r = assertInsideWorkspace("src/escape-link", root);
-		// The link target lives inside the workspace, so it should pass;
-		// the escape-symlink case is covered by a target OUTSIDE.
-		expect(r.ok).toBe(true);
-
-		const escape = join(root, "src", "escape-out");
+		const escape = join(root, "src", "escape-link");
 		try {
-			await symlink(join(root, "outside.txt"), escape);
+			await symlink(join(outsideRoot, "outside.txt"), escape);
 		} catch {
-			return; // skip on platforms that disallow
+			return; // Skip on platforms that disallow symlink creation.
 		}
-		const r2 = assertInsideWorkspace("src/escape-out", root);
-		// The target is inside the workspace (outside.txt is at root level),
-		// so this still passes. The real escape test is the next case.
-		expect(r2.ok).toBe(true);
+
+		const result = assertInsideWorkspace("src/escape-link", root);
+		expect(result.ok).toBe(false);
 	});
 
 	it("rejects a path that exceeds the length cap", () => {

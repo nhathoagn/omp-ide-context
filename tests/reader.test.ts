@@ -88,6 +88,17 @@ describe("readIdeContext", () => {
 		if (!out.ok) expect(out.reason).toMatch(/does not match/);
 	});
 
+	it("accepts a Windows workspace path whose drive letter differs only by case", async () => {
+		if (process.platform !== "win32") return;
+		const writerWorkspace = root.replace(/^([a-z]):/i, (drive) =>
+			drive === drive.toLowerCase() ? drive.toUpperCase() : drive.toLowerCase(),
+		);
+		expect(writerWorkspace).not.toBe(root);
+		await writeFile(stateFilePath(root), JSON.stringify(validJson({ workspace: writerWorkspace })), "utf8");
+		const out = await readIdeContext(root, DEFAULT_CONFIG, now);
+		expect(out.ok).toBe(true);
+	});
+
 	// mục 30 — OOW is a soft block, not a hard rejection.
 	it("soft-blocks an active file path that escapes the workspace", async () => {
 		await writeFile(stateFilePath(root), JSON.stringify(validJson({ file: "../escape.ts" })), "utf8");

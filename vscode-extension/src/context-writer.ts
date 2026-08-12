@@ -41,6 +41,27 @@ const BRIDGE_STATE_FILES: Record<string, true> = {
 	".omp/ide-context.config.json": true,
 };
 
+// VS Code can dispatch configuration and editor events concurrently. Operations
+// in the same workspace share one temporary filename, so they must not overlap.
+const stateFileOperations = new Map<string, Promise<void>>();
+
+async function withStateFileLock(
+	workspaceRoot: string,
+	operation: () => Promise<void>,
+): Promise<void> {
+	const previous = stateFileOperations.get(workspaceRoot) ?? Promise.resolve();
+	const current = previous.then(operation);
+	const next = current.catch(() => undefined);
+	stateFileOperations.set(workspaceRoot, next);
+	try {
+		await current;
+	} finally {
+		if (stateFileOperations.get(workspaceRoot) === next) {
+			stateFileOperations.delete(workspaceRoot);
+		}
+	}
+}
+
 /** Return whether a workspace-relative file is managed by this bridge. */
 export function isBridgeStateFile(file: string): boolean {
 	return BRIDGE_STATE_FILES[file] === true;
@@ -137,13 +158,15 @@ export async function writeContextAtomic(
 	workspaceRoot: string,
 	content: ContextFile | BlockedContextFile,
 ): Promise<void> {
-	const dir = join(workspaceRoot, ".omp");
-	await fs.mkdir(dir, { recursive: true });
-	const finalPath = stateFilePath(workspaceRoot);
-	const tmpPath = stateTmpFilePath(workspaceRoot);
-	const json = JSON.stringify(content, null, 2);
-	await fs.writeFile(tmpPath, json, "utf8");
-	await fs.rename(tmpPath, finalPath);
+	await withStateFileLock(workspaceRoot, async () => {
+		const dir = join(workspaceRoot, ".omp");
+		await fs.mkdir(dir, { recursive: true });
+		const finalPath = stateFilePath(workspaceRoot);
+		const tmpPath = stateTmpFilePath(workspaceRoot);
+		const json = JSON.stringify(content, null, 2);
+		await fs.writeFile(tmpPath, json, "utf8");
+		await fs.rename(tmpPath, finalPath);
+	});
 }
 
 /**
@@ -151,14 +174,16 @@ export async function writeContextAtomic(
  * the `disable` and `uninstall` flows.
  */
 export async function deleteContextFiles(workspaceRoot: string): Promise<void> {
-	for (const path of [stateTmpFilePath(workspaceRoot), stateFilePath(workspaceRoot)]) {
-		try {
-			await fs.unlink(path);
-		} catch (err) {
-			const code = (err as NodeJS.ErrnoException).code;
-			if (code !== "ENOENT") throw err;
+	await withStateFileLock(workspaceRoot, async () => {
+		for (const path of [stateTmpFilePath(workspaceRoot), stateFilePath(workspaceRoot)]) {
+			try {
+				await fs.unlink(path);
+			} catch (err) {
+				const code = (err as NodeJS.ErrnoException).code;
+				if (code !== "ENOENT") throw err;
+			}
 		}
-	}
+	});
 }
 
 /**

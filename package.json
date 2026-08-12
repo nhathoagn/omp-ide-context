@@ -1,6 +1,6 @@
 {
 	"name": "omp-safe-ide-context",
-	"version": "0.1.3",
+	"version": "0.1.4",
 	"private": true,
 	"description": "Security-focused file-based bridge that lets the OMP agent see the active VS Code editor (file + selection) before every user turn.",
 	"license": "MIT",

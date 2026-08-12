@@ -3,8 +3,18 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="${ROOT_DIR}/dist"
-STAGE_DIR="$(mktemp -d)"
+STAGE_DIR="$(mktemp -d "${ROOT_DIR}/.release-stage.XXXXXX")"
 ARCHIVE_NAME="omp-ide-context.tar.gz"
+BUN="${BUN:-bun}"
+vsceOutputPath() {
+  if command -v wslpath >/dev/null 2>&1; then
+    wslpath -w "$1"
+  else
+    printf "%s" "$1"
+  fi
+}
+
+
 
 cleanup() {
   rm -rf "${STAGE_DIR}"
@@ -12,10 +22,10 @@ cleanup() {
 trap cleanup EXIT
 
 cd "${ROOT_DIR}"
-bun install --frozen-lockfile
+"${BUN}" install --frozen-lockfile
 (
   cd vscode-extension
-  bun run build
+  "${BUN}" run build
 )
 
 mkdir -p "${STAGE_DIR}/omp-extension" "${STAGE_DIR}/vscode-extension" "${DIST_DIR}"
@@ -26,7 +36,7 @@ cp omp-extension/package.json "${STAGE_DIR}/omp-extension/"
 
 (
   cd vscode-extension
-  ./node_modules/.bin/vsce package --no-dependencies --out "${STAGE_DIR}/vscode-extension/omp-ide-context-vscode.vsix"
+  "${BUN}" x @vscode/vsce package --no-dependencies --out "$(vsceOutputPath "${STAGE_DIR}/vscode-extension/omp-ide-context-vscode.vsix")"
 )
 
 cp README.md LICENSE SECURITY.md install.sh install.ps1 uninstall.sh uninstall.ps1 "${STAGE_DIR}/"
